@@ -48,4 +48,18 @@ int has_pipe(char **args) {
             return i;
     return -1;
 }
+int main() {
+    char *line;
+    char *args[MAX_ARGS];
+    int running = 1;
+
+    while (running) {
+        while (waitpid(-1, NULL, WNOHANG) > 0);
+
+        printf("uinxsh> ");
+        line = malloc(MAX_LINE);
+        if (!fgets(line, MAX_LINE, stdin)) {
+            free(line);
+            break;
+        }
 
