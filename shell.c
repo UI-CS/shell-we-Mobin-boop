@@ -64,7 +64,7 @@ int main() {
         }
         if (strcmp(line, "!!\n") == 0) {
             if (history_count == 0) {
-                printf("No commands in history\n");
+                printf("no commands in history\n");
                 free(line);
                 continue;
             }
@@ -104,7 +104,7 @@ int main() {
         }
 
         if (strcmp(args[0], "help") == 0) {
-            printf("Built-in: exit cd pwd help history\n");
+            printf("built-in: exit cd pwd help history\n");
             free(line);
             continue;
         }
@@ -151,7 +151,7 @@ int main() {
             pid_t pid = fork();
             if (pid == 0) {
                 execvp(args[0], args);
-                printf("Command not found: %s\n", args[0]);
+                printf("Comand no found: %s\n", args[0]);
                 exit(1);
             } else {
                 if (!bg)
