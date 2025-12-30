@@ -62,4 +62,105 @@ int main() {
             free(line);
             break;
         }
+        if (strcmp(line, "!!\n") == 0) {
+            if (history_count == 0) {
+                printf("No commands in history\n");
+                free(line);
+                continue;
+            }
+            strcpy(line, history[history_count - 1]);
+            printf("%s", line);
+        } else {
+            add_history(line);
+        }
 
+        parse(line, args);
+        if (args[0] == NULL) {
+            free(line);
+            continue;
+        }
+
+        if (strcmp(args[0], "exit") == 0) {
+            running = 0;
+            free(line);
+            continue;
+        }
+
+        if (strcmp(args[0], "cd") == 0) {
+            if (args[1] == NULL)
+                chdir(getenv("HOME"));
+            else if (chdir(args[1]) != 0)
+                perror("cd");
+            free(line);
+            continue;
+        }
+
+        if (strcmp(args[0], "pwd") == 0) {
+            char cwd[1024];
+            getcwd(cwd, sizeof(cwd));
+            printf("%s\n", cwd);
+            free(line);
+            continue;
+        }
+
+        if (strcmp(args[0], "help") == 0) {
+            printf("Built-in: exit cd pwd help history\n");
+            free(line);
+            continue;
+        }
+
+        if (strcmp(args[0], "history") == 0) {
+            for (int i = 0; i < history_count; i++)
+                printf("%d %s", i + 1, history[i]);
+            free(line);
+            continue;
+        }
+
+        int bg = is_background(args);
+        int pipe_index = has_pipe(args);
+
+        if (pipe_index != -1) {
+            args[pipe_index] = NULL;
+            char **cmd1 = args;
+            char **cmd2 = &args[pipe_index + 1];
+
+            int fd[2];
+            pipe(fd);
+
+            if (fork() == 0) {
+                dup2(fd[1], STDOUT_FILENO);
+                close(fd[0]);
+                close(fd[1]);
+                execvp(cmd1[0], cmd1);
+                exit(1);
+            }
+
+            if (fork() == 0) {
+                dup2(fd[0], STDIN_FILENO);
+                close(fd[1]);
+                close(fd[0]);
+                execvp(cmd2[0], cmd2);
+                exit(1);
+            }
+
+            close(fd[0]);
+            close(fd[1]);
+            wait(NULL);
+            wait(NULL);
+        } else {
+            pid_t pid = fork();
+            if (pid == 0) {
+                execvp(args[0], args);
+                printf("Command not found: %s\n", args[0]);
+                exit(1);
+            } else {
+                if (!bg)
+                    waitpid(pid, NULL, 0);
+            }
+        }
+
+        free(line);
+    }
+
+    return 0;
+}
