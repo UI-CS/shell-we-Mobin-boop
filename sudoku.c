@@ -50,3 +50,51 @@ void *check_col(void *p) {
     valid[data->index] = 1;
     pthread_exit(NULL);
 }
+void *check_grid(void *p) {
+    param *data = p;
+    int used[10] = {0};
+    for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++) {
+            int num = sudoku[data->row+i][data->col+j];
+            if (used[num]) {
+                valid[data->index] = 0;
+                pthread_exit(NULL);
+            }
+            used[num] = 1;
+        }
+    valid[data->index] = 1;
+    pthread_exit(NULL);
+}
+int main() {
+    pthread_t threads[11];
+    param data[11];
+    int t = 0;
+
+    data[t] = (param){0,0,t};
+    pthread_create(&threads[t], NULL, check_row, &data[t]);
+    t++;
+
+    data[t] = (param){0,0,t};
+    pthread_create(&threads[t], NULL, check_col, &data[t]);
+    t++;
+
+    int idx = 2;
+    for (int i = 0; i < 9; i += 3)
+        for (int j = 0; j < 9; j += 3) {
+            data[idx] = (param){i,j,idx};
+            pthread_create(&threads[idx], NULL, check_grid, &data[idx]);
+            idx++;
+        }
+
+    for (int i = 0; i < 11; i++)
+        pthread_join(threads[i], NULL);
+
+    for (int i = 0; i < 11; i++)
+        if (valid[i] == 0) {
+            printf("Sudoku NOT ok\n");
+            return 0;
+        }
+
+    printf("Sudoku ok\n");
+    return 0;
+}
